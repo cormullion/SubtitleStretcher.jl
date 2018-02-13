@@ -24,7 +24,7 @@ Dict{Int64,Tuple} with 1047 entries:
 Timings can be stretched. For example, say the first subtitle has a time stamp of 1:40, but in the movie the matching scene appears at 1:32; and similarly, the final subtitle has a time stamp of 01:29:13, matching the movie at time 01:30:42, you can adjust all the subtitles with:
 
 ```
-stretch(subd, ["00:01:40" => "00:01:32", "01:29:13,009" => "01:30:42"])
+stretch!(subd, ["00:01:40" => "00:01:32", "01:29:13,009" => "01:30:42"])
 ```
 
 This changes every timestamp proportionally.
