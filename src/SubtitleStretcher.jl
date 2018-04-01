@@ -2,6 +2,11 @@ __precompile__()
 
 """
 Modify an .srt (subrip) subtitle file.
+
+    using SubtitleStretcher
+    cd("/Movies/")
+    st = loadsubtitles("Pirates of the Caribbean The Curse of the Black Pearl (2003).eng.srt")
+    stretch!(st, ["00:01:18" => "00:01:24", "2:03:08" => 7400])
 """
 module SubtitleStretcher
 
@@ -164,11 +169,39 @@ end
 Stretch all timestamps in a subtitle dictionary, using timestrings:
 
     stretch!(subd, ["00:06:44,580" =>"00:06:48",  "01:48:35,820" => "01:48:37"]
+
+Timestrings are H:M:S:
+
+    "00:18:29,040"
+    "00:18:29"
 """
 function stretch!(subd, markers::Vector{Pair{T, T}} where T <: String)
     length(markers) < 2 && error("not enough markers to stretch the timecodes!")
     cstart,  rstart = map(s -> convert(Float64, s), markers[1])
     cfinish, rfinish = map(s -> convert(Float64, s), markers[2])
+    stretch!(subd, [cstart => rstart, cfinish => rfinish])
+end
+
+
+"""
+    stretch!(subd, markers::Vector)
+
+Stretch using mixture of numeric timestamps and strings.
+
+    stretch!(st, [100 => "00:01:18", "2:03:08" => 7400])
+"""
+function stretch!(subd, markers::Vector)
+    length(markers) !== 2 && error("not enough markers to stretch the timecodes!")
+    r = []
+    for a in [markers[1][1], markers[1][2], markers[2][1], markers[2][1]]
+        if typeof(a) <: String
+            push!(r, convert(Float64, a))
+        end
+        if typeof(a) <: Real
+            push!(r, a)
+        end
+    end
+    cstart, rstart, cfinish, rfinish = r
     stretch!(subd, [cstart => rstart, cfinish => rfinish])
 end
 

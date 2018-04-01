@@ -7,6 +7,10 @@ ts1, ttxt1 = subd[1]
 @test ttxt1[1] == "I thought you'd never get back."
 
 stretch!(subd, [1 => 1, 2 => 2.01])
+stretch!(subd, [5.4 => "00:05:46,312", 5.5 => "00:05:48"])
+stretch!(subd, ["00:05:46,312" => 5.4, 5.5 => "00:05:48"])
+stretch!(subd, ["00:05:46,312" => "00:05:48", 5.4 => 5.5])
+stretch!(subd, [5.4 => 5.5, "00:05:46,312" => "00:05:48"])
 
 l = length(subd)
 ts2, ttxt2 = subd[l]
