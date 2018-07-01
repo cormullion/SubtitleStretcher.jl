@@ -1,5 +1,5 @@
 using SubtitleStretcher
-using Base.Test
+using Test
 
 subd = loadsubtitles(string(@__DIR__, "/test.srt"))
 

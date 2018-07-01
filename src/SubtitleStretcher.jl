@@ -23,25 +23,27 @@ mutable struct Timestamp
 end
 
 # convert a timestring ("00:18:29,040") into Float64 seconds
-function convert(::Type{Float64}, timestring)
-    if contains(timestring, ",")
+function convert(::Type{Float64}, timestring::S where S <: AbstractString)
+    if occursin(",", timestring)
         starttime, startmilli = split(timestring, ",")
     else
         starttime, startmilli = timestring, "0"
     end
-    h1, m1, s1 = map(parse, split(starttime, ":"))
-    return ((h1 * 60) + m1) * 60 + s1 + parse(startmilli)/1000
+    h1, m1, s1 = map(Meta.parse, split(starttime, ":"))
+    return ((h1 * 60) + m1) * 60 + s1 + Meta.parse(startmilli)/1000
 end
 
 # convert two timestrings to a Timestamp
 # eg "00:18:29,040 --> 00:18:30,201" -> Timestamp(1109.04, 1110.201)
-function convert(::Type{Timestamp}, tstamp)
+function convert(::Type{Timestamp}, tstamp::S where S <: AbstractString)
     rawstarttime, rawfinishtime = split(tstamp, " --> ")
-    return Timestamp(convert(Float64, rawstarttime), convert(Float64, rawfinishtime))
+    return Timestamp(
+        convert(Float64, rawstarttime),
+        convert(Float64, rawfinishtime))
 end
 
 # forgot why I needed this
-convert(::Type{Timestamp}, t::Timestamp) = (t.starttime, t.finishtime)
+#convert(::Type{Timestamp}, t::Timestamp) = (t.starttime, t.finishtime)
 
 """
     timestamptostring(timecode)
@@ -59,7 +61,7 @@ function timestamptostring(timecode)
     h = lpad(Int(floor(hr)), 2, "0")
     m = lpad(Int(floor(mn)), 2, "0")
     s = lpad(Int(floor(sc)), 2, "0")
-    mill = lpad(convert(Int, round(milli, 3) * 1000), 3, "0")
+    mill = lpad(convert(Int, round(milli, digits=3) * 1000), 3, "0")
     return "$h:$m:$s,$mill"
 end
 
@@ -83,20 +85,20 @@ function loadsubtitles(filename)
     subd = Dict{Int64, Tuple}()
     if ext == ".srt"
         #redo the numbers, this will correct any errors in the original
-        subcounter = 1
+        global subcounter = 1
         # each group of lines is a subtitle
         for s in groupby(x -> x == "", file) # look for the blank line
-           try # some problems with non-Unicode chars?
-               if s[1] != ""
-                   l = length(s)
-                   ts = convert(Timestamp, s[2])
-                   # more than one text line is possible
-                   subd[subcounter] = (ts, [s[n] for n in 3:l])
-                   subcounter += 1
-               end
-           catch
+            try # some problems with non-Unicode chars?
+                if s[1] != ""
+                    ts = convert(Timestamp, s[2])
+                    l = length(s)
+                    # more than one text line is possible
+                    subd[subcounter] = (ts, [s[n] for n in 3:l])
+                    subcounter += 1
+                end
+            catch
                println("skipping content at subtitle #$subcounter")
-           end
+            end
         end
     elseif ext == ".sub"
         # each line is a subtitle
@@ -116,8 +118,8 @@ function loadsubtitles(filename)
             catch
                 println("skipping content at line #$n")
             end
-            fromtime = parse(g1)/25
-            totime   = parse(g2)/25
+            fromtime = Meta.parse(g1)/25
+            totime   = Meta.parse(g2)/25
             textlines = split(g4, "|")
             subd[n] = (Timestamp(fromtime, totime), [textlines...])
         end
@@ -194,11 +196,10 @@ function stretch!(subd, markers::Vector)
     length(markers) !== 2 && error("not enough markers to stretch the timecodes!")
     r = []
     for a in [markers[1][1], markers[1][2], markers[2][1], markers[2][1]]
-        if typeof(a) <: String
-            push!(r, convert(Float64, a))
-        end
         if typeof(a) <: Real
             push!(r, a)
+        else
+            push!(r, convert(Float64, a))
         end
     end
     cstart, rstart, cfinish, rfinish = r
