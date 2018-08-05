@@ -1,5 +1,3 @@
-__precompile__()
-
 """
 Modify an .srt (subrip) subtitle file.
 
